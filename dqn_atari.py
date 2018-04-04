@@ -145,13 +145,12 @@ State: 210x160x3 Image
 """
 dqn_agent = DQNAgent((84, 84, 4), 4, train=TRAIN, model_path=MODEL_PATH)
 
-frames = []
 for ep_i in range(NUM_EPISODES):
     frame = env.reset()
     frame = process(frame)
 
     # Fill frame history with initial state
-    frames += [frame, frame, frame, frame]
+    frames = [frame, frame, frame, frame]
     state = np.stack(frames, axis=2)
 
     done = False
