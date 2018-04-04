@@ -1,17 +1,20 @@
 import math
 import random
+import time
 
 from keras.layers import Input, Conv2D, Dense, Flatten
-from keras.models import Model
+from keras.models import Model, load_model
 import numpy as np
 import gym
 from scipy.misc import imresize
 
-NUM_EPISODES = 20
+NUM_EPISODES = 1
 RENDER = True
+TRAIN = False
+MODEL_PATH = 'breakout.h5'
 
 class DQNAgent:
-    def __init__(self, input_shape, n_outputs,
+    def __init__(self, input_shape, n_outputs, train=True, model_path=None,
                        max_epsilon=1.0, min_epsilon=0.1, gamma=0.99,
                        lambda_=0.001, mem_size=5e5,
                        batch_size=32, update_target_freq=1000):
@@ -19,11 +22,14 @@ class DQNAgent:
         self.input_shape = input_shape
         self.n_outputs = n_outputs
 
-        # network we are training
-        self.nn = self._create_nn()
+        if train:
+            # network we are training
+            self.nn = self._create_nn()
 
-        # network we are using to predict targets in Q calculation
-        self.nn_ = self._create_nn()
+            # network we are using to predict targets in Q calculation
+            self.nn_ = self._create_nn()
+        else:
+            self.nn = load_model(model_path)
 
         self.memory = []
 
@@ -127,7 +133,6 @@ def process(frame):
     return frame
 
 
-
 env = gym.make('Breakout-v0')
 """
 Actions in Breakout:
@@ -138,7 +143,7 @@ Actions in Breakout:
 
 State: 210x160x3 Image
 """
-dqn_agent = DQNAgent((84, 84, 4), 4)
+dqn_agent = DQNAgent((84, 84, 4), 4, train=TRAIN, model_path=MODEL_PATH)
 
 frames = []
 for ep_i in range(NUM_EPISODES):
@@ -157,14 +162,23 @@ for ep_i in range(NUM_EPISODES):
         if RENDER:
             env.render()
 
+            # If playing, sleep so humans can watch
+            if not TRAIN:
+                time.sleep(1/20)
+
         frame = process(frame)
         frames.pop()
         frames.append(frame)
         state_ = np.stack(frames, axis=2)
 
-        dqn_agent.observe((state, action, reward, state_))
-        dqn_agent.replay()
+        if TRAIN:
+            dqn_agent.observe((state, action, reward, state_))
+            dqn_agent.replay()
 
         state = state_
 
     print('Episode %d finished' % ep_i)
+
+
+if TRAIN:
+    dqn_agent.nn.save(MODEL_PATH)
