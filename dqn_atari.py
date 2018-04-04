@@ -155,9 +155,11 @@ for ep_i in range(NUM_EPISODES):
     state = np.stack(frames, axis=2)
 
     done = False
+    total_reward = 0
     while not done:
         action = dqn_agent.action(state)
         frame, reward, done, info = env.step(action)
+        total_reward += reward
 
         if RENDER:
             env.render()
@@ -177,7 +179,7 @@ for ep_i in range(NUM_EPISODES):
 
         state = state_
 
-    print('Episode %d finished' % ep_i)
+    print('Episode %d finished with reward %d' % (ep_i, total_reward))
 
 
 if TRAIN:
